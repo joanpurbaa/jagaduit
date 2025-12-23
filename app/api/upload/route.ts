@@ -1,27 +1,37 @@
 import { NextResponse } from "next/server";
+import { del, put } from "@vercel/blob";
 import { GoogleGenAI } from "@google/genai";
-import * as fs from "node:fs";
-import path from "node:path";
 
-export async function POST() {
-	const apiKey = process.env.GEMINI_API_KEY;
+export async function POST(request: Request) {
+	try {
+		const apiKey = process.env.GEMINI_API_KEY;
 
-	const ai = new GoogleGenAI({ apiKey });
+		const ai = new GoogleGenAI({ apiKey });
 
-	const base64ImageFile = fs.readFileSync(
-		path.join(process.cwd(), "public", "test.jpeg"),
-		{ encoding: "base64" }
-	);
+		const formData = await request.formData();
+		const image = formData.get("image") as File;
 
-	const contents = [
-		{
-			inlineData: {
-				mimeType: "image/jpeg",
-				data: base64ImageFile,
+		const fileType = image?.type.split("/")[1].toLowerCase();
+		const fileName = Math.random().toString().split(".")[1];
+		const fullFileName = fileName + "." + fileType;
+
+		const blob = await put(fullFileName, image, {
+			access: "public",
+		});
+
+		const imageResp = await fetch(blob.url).then((response) =>
+			response.arrayBuffer()
+		);
+
+		const contents = [
+			{
+				inlineData: {
+					mimeType: "image/jpeg",
+					data: Buffer.from(imageResp).toString("base64"),
+				},
 			},
-		},
-		{
-			text: `
+			{
+				text: `
       Analisis gambar bukti transfer berikut.
 
       Tugas:
@@ -47,13 +57,19 @@ export async function POST() {
         "nominal": 150000
       }
       `,
-		},
-	];
+			},
+		];
 
-	const response = await ai.models.generateContent({
-		model: "gemini-2.5-flash",
-		contents: contents,
-	});
+		const response = await ai.models.generateContent({
+			model: "gemini-2.5-flash",
+			contents: contents,
+		});
 
-	return NextResponse.json({ response: response.text });
+		del(blob.url);
+
+		return NextResponse.json({ response: response.text });
+	} catch (error) {
+		console.error(error);
+		return NextResponse.json({ error: "Upload failed" }, { status: 400 });
+	}
 }
