@@ -13,9 +13,24 @@ export default function Home() {
 	const [transaction, setTransaction] = useState<Transaction>();
 	const [image, setImage] = useState<File | null>();
 	const [isDragging, setIsDragging] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const [progress, setProgress] = useState(0);
 
 	const uploadImage = () => {
 		if (image) {
+			setIsLoading(true);
+			setProgress(0);
+
+			const progressInterval = setInterval(() => {
+				setProgress((prev) => {
+					if (prev >= 90) {
+						clearInterval(progressInterval);
+						return 90;
+					}
+					return prev + 10;
+				});
+			}, 200);
+
 			const formData = new FormData();
 			formData.append("image", image);
 
@@ -24,7 +39,19 @@ export default function Home() {
 				body: formData,
 			})
 				.then((result) => result.json())
-				.then((data) => setTransaction(JSON.parse(data.response)));
+				.then((data) => {
+					setProgress(100);
+					setTimeout(() => {
+						setTransaction(JSON.parse(data.response));
+						setIsLoading(false);
+						setProgress(0);
+					}, 500);
+				})
+				.catch(() => {
+					clearInterval(progressInterval);
+					setIsLoading(false);
+					setProgress(0);
+				});
 		}
 	};
 
@@ -50,6 +77,35 @@ export default function Home() {
 
 	return (
 		<main className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 p-6 md:p-10">
+			{isLoading && (
+				<div className="fixed inset-0 bg-black/50 bg-opacity-40 z-50 flex items-center justify-center backdrop-blur-sm">
+					<div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+						<div className="text-center mb-6">
+							<div className="inline-block p-3 bg-blue-100 rounded-full mb-4">
+								<Upload className="w-8 h-8 text-blue-600 animate-bounce" />
+							</div>
+							<h2 className="text-xl font-bold text-gray-800 mb-2">
+								Memproses Pembayaran
+							</h2>
+							<p className="text-sm text-gray-600">Mohon tunggu sebentar...</p>
+						</div>
+
+						<div className="space-y-3">
+							<div className="flex justify-between text-sm font-semibold">
+								<span className="text-gray-600">Progress</span>
+								<span className="text-blue-600">{progress}%</span>
+							</div>
+							<div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+								<div
+									className="bg-linear-to-r from-blue-500 to-purple-600 h-full rounded-full transition-all duration-300 ease-out"
+									style={{ width: `${progress}%` }}
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+
 			<div className="max-w-4xl mx-auto">
 				<div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
 					<div className="flex items-center gap-3 mb-6">
@@ -139,7 +195,7 @@ export default function Home() {
 								</div>
 							</div>
 
-							{/* <div className="flex items-start gap-4 p-4 bg-linear-to-r from-green-50 to-transparent rounded-xl">
+							<div className="flex items-start gap-4 p-4 bg-linear-to-r from-green-50 to-transparent rounded-xl">
 								<div className="bg-green-100 p-2 rounded-lg mt-1">
 									<Calendar className="w-5 h-5 text-green-600" />
 								</div>
@@ -149,7 +205,7 @@ export default function Home() {
 										{transaction.tanggalTransaksi}
 									</p>
 								</div>
-							</div> */}
+							</div>
 
 							<div className="flex items-start gap-4 p-4 bg-linear-to-r from-orange-50 to-transparent rounded-xl">
 								<div className="bg-orange-100 p-2 rounded-lg mt-1">
