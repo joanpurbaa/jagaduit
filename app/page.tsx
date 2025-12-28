@@ -1,6 +1,7 @@
 "use client";
 import { useState, DragEvent } from "react";
 import { Upload, FileText, User, Calendar, DollarSign } from "lucide-react";
+import LogoutAction from "@/actions/logout";
 
 interface Transaction {
 	namaPengirim: string;
@@ -158,6 +159,9 @@ export default function Home() {
 							className="w-full mt-6 bg-linear-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
 							Upload
 						</button>
+						<form action={LogoutAction}>
+							<button type="submit">logout</button>
+						</form>
 					</div>
 				</div>
 
