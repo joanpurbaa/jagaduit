@@ -3,14 +3,14 @@ import RegisterAction from "@/actions/register";
 import { CheckCircle2Icon, Eye, EyeClosed, XCircleIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useTransition } from "react";
 
 export default function Register() {
 	const [username, setUsername] = useState<string>("");
 	const [email, setEmail] = useState<string>("");
 	const [password, setPassword] = useState<string>("");
 	const [showPassword, setShowPassword] = useState<boolean>(false);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [isPending, startTransition] = useTransition();
 
 	const [credentialsError, setCredentialsError] = useState<{
 		username?: string[];
@@ -27,16 +27,7 @@ export default function Register() {
 		};
 	}, [password]);
 
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		setIsLoading(true);
-
-		const registerCredentials = {
-			email,
-			username,
-			password,
-		};
-
+	const handleSubmit = (formData: FormData) => {
 		const errors: { username?: string[]; email?: string[]; password?: string[] } =
 			{};
 
@@ -57,11 +48,13 @@ export default function Register() {
 
 		if (Object.keys(errors).length > 0) {
 			setCredentialsError(errors);
-			setIsLoading(false);
-		} else {
-			setCredentialsError(undefined);
-			await RegisterAction(registerCredentials);
+			return;
 		}
+
+		setCredentialsError(undefined);
+		startTransition(() => {
+			RegisterAction(formData);
+		});
 	};
 
 	return (
@@ -72,7 +65,7 @@ export default function Register() {
 				<div className="grid grid-cols-12 bg-orange-500 rounded-tl-lg rounded-bl-4xl rounded-r-lg shadow-lg">
 					<div className="col-span-6 bg-white p-10 rounded-tl-lg rounded-tr-4xl rounded-bl-4xl">
 						<p className="font-bold text-xl text-zinc-800">Daftar</p>
-						<form onSubmit={handleSubmit} className="mt-5">
+						<form action={handleSubmit} className="mt-5">
 							<ul className="space-y-5">
 								<li>
 									<label className="text-sm" htmlFor="username">
@@ -80,12 +73,13 @@ export default function Register() {
 									</label>
 									<input
 										id="username"
+										name="username"
 										value={username}
 										onChange={(e) => setUsername(e.target.value)}
 										className="mt-2 w-full text-sm outline-none p-3 border border-gray-200 rounded-lg focus:border-orange-500 transition-colors"
 										type="text"
 										placeholder="Masukkan username"
-										disabled={isLoading}
+										disabled={isPending}
 									/>
 									{credentialsError?.username && (
 										<p className="text-xs text-red-500 mt-1">
@@ -99,12 +93,13 @@ export default function Register() {
 									</label>
 									<input
 										id="email"
+										name="email"
 										value={email}
 										onChange={(e) => setEmail(e.target.value)}
 										className="mt-2 w-full text-sm outline-none p-3 border border-gray-200 rounded-lg focus:border-orange-500 transition-colors"
 										type="text"
 										placeholder="Masukkan email"
-										disabled={isLoading}
+										disabled={isPending}
 									/>
 									{credentialsError?.email && (
 										<p className="text-xs text-red-500 mt-1">
@@ -119,12 +114,13 @@ export default function Register() {
 									<div className="mt-2 flex items-center p-3 border border-gray-200 rounded-lg focus-within:border-orange-500 transition-colors">
 										<input
 											id="password"
+											name="password"
 											value={password}
 											onChange={(e) => setPassword(e.target.value)}
 											className="w-full text-sm outline-none"
 											type={showPassword ? "text" : "password"}
 											placeholder="Masukkan password"
-											disabled={isLoading}
+											disabled={isPending}
 										/>
 										{showPassword ? (
 											<Eye
@@ -203,9 +199,9 @@ export default function Register() {
 								<li>
 									<button
 										type="submit"
-										disabled={isLoading}
+										disabled={isPending}
 										className="cursor-pointer w-full bg-orange-500 hover:bg-orange-400 disabled:bg-orange-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-md text-sm transition-colors">
-										{isLoading ? "Memproses..." : "Daftar"}
+										{isPending ? "Memproses..." : "Daftar"}
 									</button>
 									<p className="text-sm text-end mt-3">
 										Sudah punya akun?{" "}
