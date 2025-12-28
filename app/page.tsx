@@ -17,6 +17,8 @@ export default function Home() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [progress, setProgress] = useState(0);
 
+  const baseUrl = process.env.PRODUCTION_URL || process.env.BASE_URL;
+
 	const uploadImage = () => {
 		if (image) {
 			setIsLoading(true);
@@ -35,7 +37,7 @@ export default function Home() {
 			const formData = new FormData();
 			formData.append("image", image);
 
-			fetch("/api/upload", {
+			fetch(`${baseUrl}/api/upload`, {
 				method: "POST",
 				body: formData,
 			})
