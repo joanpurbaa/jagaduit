@@ -1,20 +1,22 @@
 "use server";
-import { RegisterCredentialsType } from "@/types/type";
+
+import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { RegisterCredentialsType } from "@/types/type";
 
 export default async function RegisterAction(
 	registerCredentials: RegisterCredentialsType
 ) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.BASE_URL;
-	const formData = new FormData();
+	const salt = await bcrypt.genSalt(10);
+	const hashedPassword = await bcrypt.hash(registerCredentials.password, salt);
 
-	formData.append("email", registerCredentials.email);
-	formData.append("username", registerCredentials.username);
-	formData.append("password", registerCredentials.password);
-
-	await fetch(`${baseUrl}/api/register`, {
-		method: "POST",
-		body: formData,
+	await prisma.user.create({
+		data: {
+			email: registerCredentials.email,
+			username: registerCredentials.username,
+			password: hashedPassword,
+		},
 	});
 
 	redirect("/login");
