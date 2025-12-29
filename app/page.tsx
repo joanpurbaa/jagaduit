@@ -17,7 +17,7 @@ export default function Home() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [progress, setProgress] = useState(0);
 
-  const baseUrl = process.env.PRODUCTION_URL || process.env.BASE_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_DEVELOPMENT_URL || process.env.NEXT_PUBLIC_PRODUCTION_URL;
 
 	const uploadImage = () => {
 		if (image) {
